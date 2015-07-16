@@ -22,6 +22,7 @@
 
 
 #define BUF_SIZE (200)
+#define CONFIG_STATIC_ALLOCATIONS
 
 void task2(void *pvParameters)
 {
@@ -82,6 +83,10 @@ void task2(void *pvParameters)
     }
 }
 
+#ifdef CONFIG_STATIC_ALLOCATIONS
+char recv_buf[BUF_SIZE];
+#endif // CONFIG_STATIC_ALLOCATIONS
+
 void task3(void *pvParameters)
 {
     while (1) {
@@ -92,6 +97,7 @@ void task3(void *pvParameters)
         server_addr.sin_family = AF_INET;
         server_addr.sin_addr.s_addr = INADDR_ANY;
         server_addr.sin_port = htons(80);
+        static int counter = 0;
 
         int recbytes;
 
@@ -129,8 +135,9 @@ void task3(void *pvParameters)
 
                 printf("S > Client from %s %d\n", inet_ntoa(client_addr.sin_addr), htons(client_addr.sin_port));
 
+#ifndef CONFIG_STATIC_ALLOCATIONS
                 char *recv_buf = (char *)zalloc(BUF_SIZE);
-
+#endif // CONFIG_STATIC_ALLOCATIONS
 
                 int opt = 50;
                 if (lwip_setsockopt(client_sock, SOL_SOCKET, SO_RCVTIMEO, &opt, sizeof(int)) < 0) {
@@ -148,7 +155,9 @@ void task3(void *pvParameters)
                 } else {
                     printf("C > http send success\n");
                 }
+#ifndef CONFIG_STATIC_ALLOCATIONS
                 free(recv_buf);
+#endif // CONFIG_STATIC_ALLOCATIONS
 
                 if (recbytes <= 0) {
                     printf("S > read data fail!\n");
