@@ -148,7 +148,7 @@ void task3(void *pvParameters)
                     printf("S > read data success %d!\nS > %s\n", recbytes, recv_buf);
                 }
 
-                strcpy(recv_buf, "HTTP/1.1 200 OK\nContent-Type: text/html; charset=utf-8\nConnection: close\n\nHello World!\n");
+                sprintf(recv_buf, "HTTP/1.1 200 OK\nContent-Type: text/html; charset=utf-8\nConnection: close\n\nHello World! (%d)\n", counter++);
 
                 if (write(client_sock, recv_buf, strlen(recv_buf)) < 0) {
                     printf("C > http send fail\n");
