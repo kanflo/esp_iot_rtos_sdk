@@ -20,6 +20,9 @@
 #define server_ip "192.168.101.142"
 #define server_port 9669
 
+
+#define BUF_SIZE (200)
+
 void task2(void *pvParameters)
 {
     printf("Hello, welcome to client!\r\n");
@@ -65,8 +68,8 @@ void task2(void *pvParameters)
         printf("C > send success\n");
         free(pbuf);
 
-        char *recv_buf = (char *)zalloc(128);
-        while ((recbytes = read(sta_socket , recv_buf, 128)) > 0) {
+        char *recv_buf = (char *)zalloc(BUF_SIZE);
+        while ((recbytes = read(sta_socket , recv_buf, BUF_SIZE)) > 0) {
         	recv_buf[recbytes] = 0;
             printf("C > read data success %d!\nC > %s\n", recbytes, recv_buf);
         }
@@ -126,10 +129,24 @@ void task3(void *pvParameters)
 
                 printf("S > Client from %s %d\n", inet_ntoa(client_addr.sin_addr), htons(client_addr.sin_port));
 
-                char *recv_buf = (char *)zalloc(128);
-                while ((recbytes = read(client_sock , recv_buf, 128)) > 0) {
+                char *recv_buf = (char *)zalloc(BUF_SIZE);
+
+
+                int opt = 50;
+                if (lwip_setsockopt(client_sock, SOL_SOCKET, SO_RCVTIMEO, &opt, sizeof(int)) < 0) {
+                    printf("S > failed to set timeout on socket\n");
+                }
+                while ((recbytes = read(client_sock , recv_buf, BUF_SIZE)) > 0) {
                 	recv_buf[recbytes] = 0;
                     printf("S > read data success %d!\nS > %s\n", recbytes, recv_buf);
+                }
+
+                strcpy(recv_buf, "HTTP/1.1 200 OK\nContent-Type: text/html; charset=utf-8\nConnection: close\n\nHello World!\n");
+
+                if (write(client_sock, recv_buf, strlen(recv_buf)) < 0) {
+                    printf("C > http send fail\n");
+                } else {
+                    printf("C > http send success\n");
                 }
                 free(recv_buf);
 
@@ -151,6 +168,7 @@ void task3(void *pvParameters)
 void ICACHE_FLASH_ATTR
 user_init(void)
 {
+    uart_init_new(); // Make sure uart is running at 115200
     printf("SDK version:%s\n", system_get_sdk_version());
 
     /* need to set opmode before you set config */
